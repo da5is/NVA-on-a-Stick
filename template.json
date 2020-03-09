@@ -1,0 +1,669 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "HubSettings": {
+            "type": "object",
+            "defaultvalue": {
+                "name": "hubvnet",
+                "addressPrefix": "10.0.0.0/16",
+                "subnets": [
+                    {
+                        "name": "nvasubnet",
+                        "addressPrefix": "10.0.0.0/24"
+                    },
+                    {
+                        "name": "vmsubnet",
+                        "addressPrefix": "10.0.1.0/24"
+                    },
+                    {
+                        "name": "AzureBastionSubnet",
+                        "addressPrefix": "10.0.254.0/24"
+                    }
+                ],
+                "bastionpip": "[concat('hubbastionpip-', uniqueString(resourceGroup().id))]",
+                "bastionhostname": "[concat('hubbastionhost-',uniqueString(resourceGroup().id))]"
+            }
+        },
+        "Spoke1Settings": {
+            "type": "object",
+            "defaultvalue": {
+                "name": "spoke1vnet",
+                "addressPrefix": "10.1.0.0/16",
+                "subnets": [
+                    {
+                        "name": "vmsubnet",
+                        "addressPrefix": "10.1.0.0/24"
+                    },
+                    {
+                        "name": "AzureBastionSubnet",
+                        "addressPrefix": "10.1.254.0/24"
+                    }
+                ],
+                "bastionpip": "[concat('spoke1bastionpip-', uniqueString(resourceGroup().id))]",
+                "bastionhostname": "[concat('spoke1bastionhost-',uniqueString(resourceGroup().id))]"
+            }
+        },
+        "Spoke2Settings": {
+            "type": "object",
+            "defaultvalue": {
+                "name": "spoke2vnet",
+                "addressPrefix": "10.2.0.0/16",
+                "subnets": [
+                    {
+                        "name": "vmsubnet",
+                        "addressPrefix": "10.2.0.0/24"
+                    },
+                    {
+                        "name": "AzureBastionSubnet",
+                        "addressPrefix": "10.2.254.0/24"
+                    }
+                ],
+                "bastionpip": "[concat('spoke2bastionpip-', uniqueString(resourceGroup().id))]",
+                "bastionhostname": "[concat('spoke2bastionhost-',uniqueString(resourceGroup().id))]"
+            }
+        },
+        "vm1": {
+            "type": "object",
+            "defaultvalue": {
+                "computername": "[toLower(concat('spoke1vm-', uniquestring(resourceGroup().id)))]",
+                "disk": "[toLower(concat('spoke1vm-', uniquestring(resourceGroup().id), '-disk'))]",
+                "nic": "spoke1vmnic",
+                "storageaccount": "[toLower(concat('spoke1vm', uniquestring(resourceGroup().id)))]"
+            }
+        },
+        "vm2": {
+            "type": "object",
+            "defaultvalue": {
+                "computername": "[toLower(concat('spoke2vm-', uniquestring(resourceGroup().id)))]",
+                "disk": "[toLower(concat('spoke2vm-', uniquestring(resourceGroup().id), '-disk'))]",
+                "nic": "spoke2vmnic",
+                "storageaccount": "[toLower(concat('spoke2vm', uniquestring(resourceGroup().id)))]"
+            }
+        },
+        "vm3": {
+            "type": "object",
+            "defaultvalue": {
+                "computername": "[toLower(concat('hub1vm-', uniquestring(resourceGroup().id)))]",
+                "disk": "[toLower(concat('hub1vm-', uniquestring(resourceGroup().id), '-disk'))]",
+                "nic": "hub1vmnic",
+                "storageaccount": "[toLower(concat('hub1vm', uniquestring(resourceGroup().id)))]"
+            }
+        },
+        "administratoraccount": {
+            "type": "object",
+            "defaultvalue": {
+                "administrator": "adminuser",
+                "password": "[concat(toUpper(substring(uniqueString(newGuid()),0,6)), '#', substring(uniqueString(newGuid()),6,6) )]"
+            }
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "apiVersion": "2015-06-15",
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "[parameters('HubSettings').name]",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "displayName": "[parameters('HubSettings').name]"
+            },
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[parameters('HubSettings').AddressPrefix]"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[parameters('HubSettings').subnets[0].name]",
+                        "properties": {
+                            "addressPrefix": "[parameters('HubSettings').subnets[0].addressPrefix]"
+                        }
+                    },
+                    {
+                        "name": "[parameters('HubSettings').subnets[1].name]",
+                        "properties": {
+                            "addressPrefix": "[parameters('HubSettings').subnets[1].addressPrefix]"
+                        }
+                    },
+                    {
+                        "name": "[parameters('HubSettings').subnets[2].name]",
+                        "properties": {
+                            "addressPrefix": "[parameters('HubSettings').subnets[2].addressPrefix]"
+                        }
+                    }
+                ]
+            },
+            "resources": [
+                {
+                    "apiVersion": "2015-06-15",
+                    "type": "virtualNetworkPeerings",
+                    "name": "HubToSpoke1",
+                    "location": "[resourceGroup().location]",
+                    "dependsOn": [
+                        "[concat('Microsoft.Network/virtualNetworks/', parameters('hubsettings').name)]",
+                        "[concat('Microsoft.Network/virtualNetworks/', parameters('Spoke1Settings').name)]"
+                    ],
+                    "comments": "This is the peering from Hub to Spoke 1",
+                    "properties": {
+                        "allowVirtualNetworkAccess": "true",
+                        "allowForwardedTraffic": "true",
+                        "allowGatewayTransit": "true",
+                        "useRemoteGateways": "false",
+                        "remoteVirtualNetwork": {
+                            "id": "[resourceId('Microsoft.Network/virtualNetworks',parameters('Spoke1Settings').name)]"
+                        }
+                    }
+                },
+                {
+                    "apiVersion": "2016-06-01",
+                    "type": "virtualNetworkPeerings",
+                    "name": "HubToSpoke2",
+                    "location": "[resourceGroup().location]",
+                    "dependsOn": [
+                        "[concat('Microsoft.Network/virtualNetworks/', parameters('HubSettings').name)]",
+                        "[concat('Microsoft.Network/virtualNetworks/', parameters('Spoke2Settings').name)]"
+                    ],
+                    "comments": "This is the peering from Hub to Spoke 2",
+                    "properties": {
+                        "allowVirtualNetworkAccess": "true",
+                        "allowForwardedTraffic": "true",
+                        "allowGatewayTransit": "true",
+                        "useRemoteGateways": "false",
+                        "remoteVirtualNetwork": {
+                            "id": "[resourceId('Microsoft.Network/virtualNetworks',parameters('Spoke2Settings').name)]"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "apiVersion": "2019-02-01",
+            "type": "Microsoft.Network/publicIpAddresses",
+            "name": "[parameters('HubSettings').bastionpip]",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "Standard"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Static"
+            },
+            "tags": {}
+        },
+        {
+            "apiVersion": "2019-09-01",
+            "type": "Microsoft.Network/bastionHosts",
+            "name": "[parameters('HubSettings').bastionhostname]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[concat('Microsoft.Network/publicIPAddresses/', parameters('Hubsettings').bastionpip)]",
+                "[concat('Microsoft.Network/virtualNetworks/', parameters('HubSettings').name)]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "IpConf",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('Hubsettings').bastionpip)]"
+                            },
+                            "subnet": {
+                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('HubSettings').name), '/subnets/', parameters('HubSettings').subnets[2].name)]"
+                            }
+                        }
+                    }
+                ]
+            },
+            "tags": {}
+        },
+        {
+            "apiVersion": "2015-06-15",
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "[parameters('Spoke1Settings').name]",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "displayName": "[parameters('Spoke1Settings').name]"
+            },
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[parameters('Spoke1Settings').AddressPrefix]"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[parameters('Spoke1Settings').subnets[0].name]",
+                        "properties": {
+                            "addressPrefix": "[parameters('Spoke1Settings').subnets[0].addressPrefix]"
+                        }
+                    },
+                    {
+                        "name": "[parameters('Spoke1Settings').subnets[1].name]",
+                        "properties": {
+                            "addressPrefix": "[parameters('Spoke1Settings').subnets[1].addressPrefix]"
+                        }
+                    }
+                ]
+            },
+            "resources": [
+                {
+                    "apiVersion": "2016-06-01",
+                    "type": "virtualNetworkPeerings",
+                    "name": "Spoke1ToHub",
+                    "location": "[resourceGroup().location]",
+                    "dependsOn": [
+                        "[concat('Microsoft.Network/virtualNetworks/', parameters('HubSettings').name)]",
+                        "[concat('Microsoft.Network/virtualNetworks/', parameters('Spoke1Settings').name)]"
+                    ],
+                    "comments": "This is the peering from Spoke 1 to Hub",
+                    "properties": {
+                        "allowVirtualNetworkAccess": "true",
+                        "allowForwardedTraffic": "true",
+                        "allowGatewayTransit": "false",
+                        "useRemoteGateways": "false",
+                        "remoteVirtualNetwork": {
+                            "id": "[resourceId('Microsoft.Network/virtualNetworks',parameters('HubSettings').name)]"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "apiVersion": "2019-02-01",
+            "type": "Microsoft.Network/publicIpAddresses",
+            "name": "[parameters('Spoke1Settings').bastionpip]",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "Standard"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Static"
+            },
+            "tags": {}
+        },
+        {
+            "apiVersion": "2019-09-01",
+            "type": "Microsoft.Network/bastionHosts",
+            "name": "[parameters('Spoke1Settings').bastionhostname]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[concat('Microsoft.Network/publicIPAddresses/', parameters('Spoke1Settings').bastionpip)]",
+                "[concat('Microsoft.Network/virtualNetworks/', parameters('Spoke1Settings').name)]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "IpConf",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('Spoke1Settings').bastionpip)]"
+                            },
+                            "subnet": {
+                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('Spoke1Settings').name), '/subnets/', parameters('Spoke1Settings').subnets[1].name)]"
+                            }
+                        }
+                    }
+                ]
+            },
+            "tags": {}
+        },
+        {
+            "apiVersion": "2015-06-15",
+            "type": "Microsoft.Network/virtualNetworks",
+            "name": "[parameters('Spoke2Settings').name]",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "displayName": "[parameters('Spoke2Settings').name]"
+            },
+            "properties": {
+                "addressSpace": {
+                    "addressPrefixes": [
+                        "[parameters('Spoke2Settings').AddressPrefix]"
+                    ]
+                },
+                "subnets": [
+                    {
+                        "name": "[parameters('Spoke2Settings').subnets[0].name]",
+                        "properties": {
+                            "addressPrefix": "[parameters('Spoke2Settings').subnets[0].addressPrefix]"
+                        }
+                    },
+                    {
+                        "name": "[parameters('Spoke2Settings').subnets[1].name]",
+                        "properties": {
+                            "addressPrefix": "[parameters('Spoke2Settings').subnets[1].addressPrefix]"
+                        }
+                    }
+                ]
+            },
+            "resources": [
+                {
+                    "apiVersion": "2016-06-01",
+                    "type": "virtualNetworkPeerings",
+                    "name": "Spoke2ToHub",
+                    "location": "[resourceGroup().location]",
+                    "dependsOn": [
+                        "[concat('Microsoft.Network/virtualNetworks/', parameters('HubSettings').name)]",
+                        "[concat('Microsoft.Network/virtualNetworks/', parameters('Spoke2Settings').name)]"
+                    ],
+                    "comments": "This is the peering from Spoke 2 to Hub",
+                    "properties": {
+                        "allowVirtualNetworkAccess": "true",
+                        "allowForwardedTraffic": "true",
+                        "allowGatewayTransit": "false",
+                        "useRemoteGateways": "false",
+                        "remoteVirtualNetwork": {
+                            "id": "[resourceId('Microsoft.Network/virtualNetworks',parameters('HubSettings').name)]"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "apiVersion": "2019-02-01",
+            "type": "Microsoft.Network/publicIpAddresses",
+            "name": "[parameters('Spoke2Settings').bastionpip]",
+            "location": "[resourceGroup().location]",
+            "sku": {
+                "name": "Standard"
+            },
+            "properties": {
+                "publicIPAllocationMethod": "Static"
+            },
+            "tags": {}
+        },
+        {
+            "apiVersion": "2019-09-01",
+            "type": "Microsoft.Network/bastionHosts",
+            "name": "[parameters('Spoke2Settings').bastionhostname]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[concat('Microsoft.Network/publicIPAddresses/', parameters('Spoke2Settings').bastionpip)]",
+                "[concat('Microsoft.Network/virtualNetworks/', parameters('Spoke2Settings').name)]"
+            ],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "IpConf",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "publicIPAddress": {
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('Spoke2Settings').bastionpip)]"
+                            },
+                            "subnet": {
+                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('Spoke2Settings').name), '/subnets/', parameters('Spoke2Settings').subnets[1].name)]"
+                            }
+                        }
+                    }
+                ]
+            },
+            "tags": {}
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "name": "[parameters('vm1').storageaccount]",
+            "apiVersion": "2015-06-15",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "displayName": "[parameters('vm1').storageaccount]"
+            },
+            "properties": {
+                "accountType": "Standard_LRS"
+            }
+        },
+        {
+            "apiVersion": "2015-06-15",
+            "type": "Microsoft.Network/networkInterfaces",
+            "name": "[parameters('vm1').nic]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[concat('Microsoft.Network/virtualNetworks/', parameters('Spoke1Settings').name)]"
+            ],
+            "tags": {
+                "displayName": "[parameters('vm1').nic]"
+            },
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('Spoke1Settings').name), '/subnets/', parameters('Spoke1Settings').subnets[0].name)]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "2017-03-30",
+            "type": "Microsoft.Compute/virtualMachines",
+            "name": "[parameters('vm1').computerName]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[concat('Microsoft.Storage/storageAccounts/', parameters('vm1').storageaccount)]",
+                "[concat('Microsoft.Network/networkInterfaces/', parameters('vm1').nic)]"
+            ],
+            "tags": {
+                "displayName": "[parameters('vm1').computername]"
+            },
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "Standard_D1"
+                },
+                "osProfile": {
+                    "computerName": "[parameters('vm1').computername]",
+                    "adminUsername": "[parameters('administratoraccount').administrator]",
+                    "adminPassword": "[parameters('administratoraccount').password]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "Canonical",
+                        "offer": "UbuntuServer",
+                        "sku": "16.04-LTS",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "name": "[parameters('vm1').disk]",
+                        "caching": "ReadWrite",
+                        "createOption": "FromImage"
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('vm1').nic)]"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "name": "[parameters('vm2').storageaccount]",
+            "apiVersion": "2015-06-15",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "displayName": "[parameters('vm2').storageaccount]"
+            },
+            "properties": {
+                "accountType": "Standard_LRS"
+            }
+        },
+        {
+            "apiVersion": "2015-06-15",
+            "type": "Microsoft.Network/networkInterfaces",
+            "name": "[parameters('vm2').nic]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[concat('Microsoft.Network/virtualNetworks/', parameters('Spoke2Settings').name)]"
+            ],
+            "tags": {
+                "displayName": "[parameters('vm2').nic]"
+            },
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('Spoke2Settings').name), '/subnets/', parameters('Spoke1Settings').subnets[0].name)]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "2017-03-30",
+            "type": "Microsoft.Compute/virtualMachines",
+            "name": "[parameters('vm2').computerName]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[concat('Microsoft.Storage/storageAccounts/', parameters('vm2').storageaccount)]",
+                "[concat('Microsoft.Network/networkInterfaces/', parameters('vm2').nic)]"
+            ],
+            "tags": {
+                "displayName": "[parameters('vm2').computername]"
+            },
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "Standard_D1"
+                },
+                "osProfile": {
+                    "computerName": "[parameters('vm2').computername]",
+                    "adminUsername": "[parameters('administratoraccount').administrator]",
+                    "adminPassword": "[parameters('administratoraccount').password]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "Canonical",
+                        "offer": "UbuntuServer",
+                        "sku": "16.04-LTS",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "name": "[parameters('vm2').disk]",
+                        "caching": "ReadWrite",
+                        "createOption": "FromImage"
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('vm2').nic)]"
+                        }
+                    ]
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Storage/storageAccounts",
+            "name": "[parameters('vm3').storageaccount]",
+            "apiVersion": "2015-06-15",
+            "location": "[resourceGroup().location]",
+            "tags": {
+                "displayName": "[parameters('vm3').storageaccount]"
+            },
+            "properties": {
+                "accountType": "Standard_LRS"
+            }
+        },
+        {
+            "apiVersion": "2015-06-15",
+            "type": "Microsoft.Network/networkInterfaces",
+            "name": "[parameters('vm3').nic]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[concat('Microsoft.Network/virtualNetworks/', parameters('Spoke1Settings').name)]"
+            ],
+            "tags": {
+                "displayName": "[parameters('vm3').nic]"
+            },
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "privateIPAllocationMethod": "Dynamic",
+                            "subnet": {
+                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('HubSettings').name), '/subnets/', parameters('Spoke1Settings').subnets[0].name)]"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "apiVersion": "2017-03-30",
+            "type": "Microsoft.Compute/virtualMachines",
+            "name": "[parameters('vm3').computerName]",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[concat('Microsoft.Storage/storageAccounts/', parameters('vm3').storageaccount)]",
+                "[concat('Microsoft.Network/networkInterfaces/', parameters('vm3').nic)]"
+            ],
+            "tags": {
+                "displayName": "[parameters('vm3').computername]"
+            },
+            "properties": {
+                "hardwareProfile": {
+                    "vmSize": "Standard_D1"
+                },
+                "osProfile": {
+                    "computerName": "[parameters('vm3').computername]",
+                    "adminUsername": "[parameters('administratoraccount').administrator]",
+                    "adminPassword": "[parameters('administratoraccount').password]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "Canonical",
+                        "offer": "UbuntuServer",
+                        "sku": "16.04-LTS",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "name": "[parameters('vm3').disk]",
+                        "caching": "ReadWrite",
+                        "createOption": "FromImage"
+                    }
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('vm3').nic)]"
+                        }
+                    ]
+                }
+            }
+        }
+    ],
+    "outputs": {
+        "VM 1 Name": {
+            "type": "string",
+            "value": "[parameters('vm1').computername]"
+        },
+        "VM 2 Name": {
+            "type": "string",
+            "value": "[parameters('vm2').computername]"
+        },
+        "VM 3 Name": {
+            "type": "string",
+            "value": "[parameters('vm3').computername]"
+        },
+        "Administrator Account": {
+            "type": "string",
+            "value": "[parameters('administratoraccount').administrator]"
+        },
+        "Administrator Password": {
+            "type": "string",
+            "value": "[parameters('administratoraccount').password]"
+        }
+    },
+    "functions": []
+}
