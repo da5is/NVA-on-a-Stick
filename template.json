@@ -98,8 +98,31 @@
             }
         }
     },
-    "variables": {},
+    "variables": {
+        "routeTableName": "spokeToHub"
+    },
     "resources": [
+        {
+            "name": "[variables('routeTableName')]",
+            "type": "Microsoft.Network/routeTables",
+            "apiVersion": "2018-08-01",
+            "location": "[resourceGroup().location]",
+            "tags": {
+            },
+            "properties": {
+                "routes": [
+                    {
+                        "name": "spokeToHub",
+                        "properties": {
+                            "addressPrefix": "0.0.0.0/0",
+                            "nextHopType": "VirtualAppliance",
+                            "nextHopIpAddress": "10.0.0.4"
+                        }
+                    }
+                ],
+                "disableBgpRoutePropagation": false
+            }
+        },
         {
             "apiVersion": "2015-06-15",
             "type": "Microsoft.Network/virtualNetworks",
@@ -189,7 +212,8 @@
             "properties": {
                 "publicIPAllocationMethod": "Static"
             },
-            "tags": {}
+            "tags": {
+            }
         },
         {
             "apiVersion": "2019-09-01",
@@ -216,13 +240,18 @@
                     }
                 ]
             },
-            "tags": {}
+            "tags": {
+            }
         },
         {
             "apiVersion": "2015-06-15",
             "type": "Microsoft.Network/virtualNetworks",
             "name": "[parameters('Spoke1Settings').name]",
             "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[concat('Microsoft.Network/routeTables/', variables('routeTableName'))]"
+            ],
+
             "tags": {
                 "displayName": "[parameters('Spoke1Settings').name]"
             },
@@ -236,7 +265,10 @@
                     {
                         "name": "[parameters('Spoke1Settings').subnets[0].name]",
                         "properties": {
-                            "addressPrefix": "[parameters('Spoke1Settings').subnets[0].addressPrefix]"
+                            "addressPrefix": "[parameters('Spoke1Settings').subnets[0].addressPrefix]",
+                            "routeTable": {
+                                "id": "[resourceId('Microsoft.Network/routeTables', variables('routeTableName'))]"
+                            }
                         }
                     },
                     {
@@ -281,7 +313,8 @@
             "properties": {
                 "publicIPAllocationMethod": "Static"
             },
-            "tags": {}
+            "tags": {
+            }
         },
         {
             "apiVersion": "2019-09-01",
@@ -308,13 +341,17 @@
                     }
                 ]
             },
-            "tags": {}
+            "tags": {
+            }
         },
         {
             "apiVersion": "2015-06-15",
             "type": "Microsoft.Network/virtualNetworks",
             "name": "[parameters('Spoke2Settings').name]",
             "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[concat('Microsoft.Network/routeTables/', variables('routeTableName'))]"
+            ],
             "tags": {
                 "displayName": "[parameters('Spoke2Settings').name]"
             },
@@ -328,7 +365,10 @@
                     {
                         "name": "[parameters('Spoke2Settings').subnets[0].name]",
                         "properties": {
-                            "addressPrefix": "[parameters('Spoke2Settings').subnets[0].addressPrefix]"
+                            "addressPrefix": "[parameters('Spoke2Settings').subnets[0].addressPrefix]",
+                            "routeTable": {
+                                "id": "[resourceId('Microsoft.Network/routeTables', variables('routeTableName'))]"
+                            }
                         }
                     },
                     {
@@ -373,7 +413,8 @@
             "properties": {
                 "publicIPAllocationMethod": "Static"
             },
-            "tags": {}
+            "tags": {
+            }
         },
         {
             "apiVersion": "2019-09-01",
@@ -400,7 +441,8 @@
                     }
                 ]
             },
-            "tags": {}
+            "tags": {
+            }
         },
         {
             "type": "Microsoft.Storage/storageAccounts",
@@ -598,7 +640,7 @@
                         }
                     }
                 ],
-                                            "enableIPForwarding": true
+                "enableIPForwarding": true
 
             }
         },
@@ -668,5 +710,6 @@
             "value": "[parameters('administratoraccount').password]"
         }
     },
-    "functions": []
+    "functions": [
+    ]
 }
