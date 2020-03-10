@@ -580,7 +580,7 @@
             "name": "[parameters('vm3').nic]",
             "location": "[resourceGroup().location]",
             "dependsOn": [
-                "[concat('Microsoft.Network/virtualNetworks/', parameters('Spoke1Settings').name)]"
+                "[concat('Microsoft.Network/virtualNetworks/', parameters('HubSettings').name)]"
             ],
             "tags": {
                 "displayName": "[parameters('vm3').nic]"
@@ -590,13 +590,16 @@
                     {
                         "name": "ipconfig1",
                         "properties": {
-                            "privateIPAllocationMethod": "Dynamic",
+                            "privateIPAllocationMethod": "Static",
+                            "privateIPAddress": "10.0.0.4",
                             "subnet": {
-                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('HubSettings').name), '/subnets/', parameters('Spoke1Settings').subnets[0].name)]"
+                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('HubSettings').name), '/subnets/', parameters('HubSettings').subnets[0].name)]"
                             }
                         }
                     }
-                ]
+                ],
+                                            "enableIPForwarding": true
+
             }
         },
         {
