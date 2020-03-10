@@ -685,7 +685,34 @@
                         }
                     ]
                 }
-            }
+
+            },
+            "resources": [
+                {
+                    "apiVersion": "2015-06-15",
+                    "type": "extensions",
+                    "name": "config-nva",
+                    "location": "[resourceGroup().location]",
+                    "dependsOn": [
+                        "[concat('Microsoft.Compute/virtualMachines/', parameters('vm3').computerName)]"
+                    ],
+                    "tags": {
+                        "displayName": "config-nva"
+                    },
+                    "properties": {
+                        "publisher": "Microsoft.Azure.Extensions",
+                        "type": "CustomScript",
+                        "typeHandlerVersion": "2.0",
+                        "autoUpgradeMinorVersion": true,
+                        "settings": {
+                            "commandToExecute": "sysctl -w net.ipv4.ip_forward=1 && iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE ! -d 10.0.0.0/8"
+                        }
+                    }
+                }
+            ]
+
+
+
         }
     ],
     "outputs": {
