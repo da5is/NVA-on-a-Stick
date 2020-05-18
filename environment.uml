@@ -1,0 +1,46 @@
+@startuml peeredVnetsWithVMs
+!define AzurePuml https://raw.githubusercontent.com/RicardoNiepel/Azure-PlantUML/release/1-0/dist
+!includeurl AzurePuml/AzureCommon.puml
+!includeurl AzurePuml/Networking/all.puml
+!includeurl AzurePuml/Compute/all.puml
+!includeurl AzurePuml/Security/AzureKeyVault.puml
+!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/master/C4_Container.puml
+
+System_Boundary(c1, "hubvnet") {
+    AzureVirtualNetwork(hubvnet, "hubvnet", "Vnet", "10.0.0.0/16")
+    AzureVirtualNetwork(hubnva, "nvasubnet", "Subnet", "10.0.0.0/24")
+    AzureVirtualNetwork(hubvm, "vmsubnet", "Subnet", "10.0.1.0/24")
+    AzureVirtualNetwork(hubbast, "AzureBastionSubnet", "Subnet", "10.0.254.0/24")
+}
+System_Boundary(c2, "spoke1vnet") {
+    AzureVirtualNetwork(s1vnet, "spoke1vnet", "Vnet", "10.1.0.0/16")
+    AzureVirtualNetwork(s1vm, "vmsubnet", "Subnet", "10.1.0.0/24")
+    AzureVirtualNetwork(s1bast, "AzureBastionSubnet", "Subnet", "10.1.254.0/24")
+}
+System_Boundary(c3, "spoke2vnet") {
+    AzureVirtualNetwork(s2vnet, "spoke2vnet", "Vnet", "10.2.0.0/16")
+    AzureVirtualNetwork(s2vm, "vmsubnet", "Subnet", "10.2.0.0/24")
+    AzureVirtualNetwork(s2bast, "AzureBastionSubnet", "Subnet", "10.2.254.0/24")
+}
+
+AzureVirtualMachine(vm1, "spoke1vm", "Virtual Machine")
+AzureVirtualMachine(vm2, "spoke2vm", "Virtual Machine")
+AzureVirtualMachine(vm3, "nva", "Virtual Machine")
+
+hubvnet <--> hubnva
+hubvnet <--> hubvm
+hubvnet <--> hubbast
+
+s1vnet <--> s1vm
+s1vnet <--> s1bast
+
+s2vnet <--> s2vm
+s2vnet <--> s2bast
+
+hubvnet <-left-> s1vnet: "Peering"
+hubvnet <-right-> s2vnet: "Peering"
+vm1 -up-> s1vm
+vm2 -up-> s2vm
+vm3 -up-> hubnva
+
+@enduml

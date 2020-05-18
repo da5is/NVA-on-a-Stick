@@ -2,100 +2,264 @@
     "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
     "contentVersion": "1.0.0.0",
     "parameters": {
-        "HubSettings": {
-            "type": "object",
-            "defaultvalue": {
-                "name": "hubvnet",
-                "addressPrefix": "10.0.0.0/16",
-                "subnets": [
-                    {
-                        "name": "nvasubnet",
-                        "addressPrefix": "10.0.0.0/24"
-                    },
-                    {
-                        "name": "vmsubnet",
-                        "addressPrefix": "10.0.1.0/24"
-                    },
-                    {
-                        "name": "AzureBastionSubnet",
-                        "addressPrefix": "10.0.254.0/24"
-                    }
-                ],
-                "bastionpip": "[concat('hubbastionpip-', uniqueString(resourceGroup().id))]",
-                "bastionhostname": "[concat('hubbastionhost-',uniqueString(resourceGroup().id))]"
-            }
+        "hubvnetname": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "hubvnet"
         },
-        "Spoke1Settings": {
-            "type": "object",
-            "defaultvalue": {
-                "name": "spoke1vnet",
-                "addressPrefix": "10.1.0.0/16",
-                "subnets": [
-                    {
-                        "name": "vmsubnet",
-                        "addressPrefix": "10.1.0.0/24"
-                    },
-                    {
-                        "name": "AzureBastionSubnet",
-                        "addressPrefix": "10.1.254.0/24"
-                    }
-                ],
-                "bastionpip": "[concat('spoke1bastionpip-', uniqueString(resourceGroup().id))]",
-                "bastionhostname": "[concat('spoke1bastionhost-',uniqueString(resourceGroup().id))]"
-            }
+        "hubvnetaddressprefix": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "10.0.0.0/16"
         },
-        "Spoke2Settings": {
-            "type": "object",
-            "defaultvalue": {
-                "name": "spoke2vnet",
-                "addressPrefix": "10.2.0.0/16",
-                "subnets": [
-                    {
-                        "name": "vmsubnet",
-                        "addressPrefix": "10.2.0.0/24"
-                    },
-                    {
-                        "name": "AzureBastionSubnet",
-                        "addressPrefix": "10.2.254.0/24"
-                    }
-                ],
-                "bastionpip": "[concat('spoke2bastionpip-', uniqueString(resourceGroup().id))]",
-                "bastionhostname": "[concat('spoke2bastionhost-',uniqueString(resourceGroup().id))]"
-            }
+        "hubvnetnvasubnetname": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "nvasubnet"
         },
-        "vm1": {
-            "type": "object",
-            "defaultvalue": {
-                "computername": "[toLower(concat('spoke1vm-', uniquestring(resourceGroup().id)))]",
-                "disk": "[toLower(concat('spoke1vm-', uniquestring(resourceGroup().id), '-disk'))]",
-                "nic": "spoke1vmnic",
-                "storageaccount": "[toLower(concat('spoke1vm', uniquestring(resourceGroup().id)))]"
-            }
+        "hubvnetnvasubnet": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "10.0.0.0/24"
         },
-        "vm2": {
-            "type": "object",
-            "defaultvalue": {
-                "computername": "[toLower(concat('spoke2vm-', uniquestring(resourceGroup().id)))]",
-                "disk": "[toLower(concat('spoke2vm-', uniquestring(resourceGroup().id), '-disk'))]",
-                "nic": "spoke2vmnic",
-                "storageaccount": "[toLower(concat('spoke2vm', uniquestring(resourceGroup().id)))]"
-            }
+        "hubvnetvmsubnetname": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "vmbsubnet"
         },
-        "vm3": {
-            "type": "object",
-            "defaultvalue": {
-                "computername": "[toLower(concat('hub1vm-', uniquestring(resourceGroup().id)))]",
-                "disk": "[toLower(concat('hub1vm-', uniquestring(resourceGroup().id), '-disk'))]",
-                "nic": "hub1vmnic",
-                "storageaccount": "[toLower(concat('hub1vm', uniquestring(resourceGroup().id)))]"
-            }
+        "hubvnetvmsubnet": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "10.0.1.0/24"
         },
-        "administratoraccount": {
-            "type": "object",
-            "defaultvalue": {
-                "administrator": "adminuser",
-                "password": "[concat(toUpper(substring(uniqueString(newGuid()),0,6)), '#', substring(uniqueString(newGuid()),6,6) )]"
-            }
+        "hubvnetbastionsubnet": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "10.0.254.0/24"
+        },
+        "hubbastionpip": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "[concat('hubbastionpip-', uniqueString(resourceGroup().id))]"
+        },
+        "hubbastionhostname": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "[concat('hubbastionhost-',uniqueString(resourceGroup().id))]"
+        },
+        "spoke1vnetname": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "spoke1vnet"
+        },
+        "spoke1vnetaddressprefix": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "10.1.0.0/16"
+        },
+        "spoke1vnetvmsubnetname": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "vmsubnet"
+        },
+        "spoke1vnetvmsubnet": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "10.1.0.0/24"
+        },
+        "spoke1vnetbastionsubnet": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "10.1.254.0/24"
+        },
+        "spoke1bastionpip": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "[concat('spoke1bastionpip-', uniqueString(resourceGroup().id))]"
+        },
+        "spoke1bastionhostname": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "[concat('spoke1bastionhost-',uniqueString(resourceGroup().id))]"
+        },
+        "spoke2vnetname": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "spoke2vnet"
+        },
+        "spoke2vnetaddressprefix": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "10.2.0.0/16"
+        },
+        "spoke2vnetvmsubnetname": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "vmsubnet"
+        },
+        "spoke2vnetvmsubnet": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "10.2.0.0/24"
+        },
+        "spoke2vnetbastionsubnet": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "10.2.254.0/24"
+        },
+        "spoke2bastionpip": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "[concat('spoke2bastionpip-', uniqueString(resourceGroup().id))]"
+        },
+        "spoke2bastionhostname": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "[concat('spoke2bastionhost-',uniqueString(resourceGroup().id))]"
+        },
+        "vm1name": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "[toLower(concat('spoke1vm-', uniquestring(resourceGroup().id)))]"
+        },
+        "vm1disk": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultvalue": "[toLower(concat('spoke1vm-', uniquestring(resourceGroup().id), '-disk'))]"
+        },
+        "vm1nic": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "spoke1vmnic"
+        },
+        "vm1storageacct": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "[toLower(concat('spoke1vm', uniquestring(resourceGroup().id)))]"
+        },
+        "vm2name": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "[toLower(concat('spoke2vm-', uniquestring(resourceGroup().id)))]"
+        },
+        "vm2disk": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultvalue": "[toLower(concat('spoke2vm-', uniquestring(resourceGroup().id), '-disk'))]"
+        },
+        "vm2nic": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "spoke2vmnic"
+        },
+        "vm2storageacct": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "[toLower(concat('spoke2vm', uniquestring(resourceGroup().id)))]"
+        },
+        "vm3name": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "[toLower(concat('hub1vm-', uniquestring(resourceGroup().id)))]"
+        },
+        "vm3disk": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultvalue": "[toLower(concat('hub1vm-', uniquestring(resourceGroup().id), '-disk'))]"
+        },
+        "vm3nic": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "hub1vmnic"
+        },
+        "vm3storageacct": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "[toLower(concat('hub1vm', uniquestring(resourceGroup().id)))]"
+        },
+        "adminuser": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "adminuser"
+        },
+        "adminpassword": {
+            "type": "string",
+            "metadata": {
+                "description": "description"
+            },
+            "defaultValue": "[concat(toUpper(substring(uniqueString(newGuid()),0,6)), '#', substring(uniqueString(newGuid()),6,6) )]"
         }
     },
     "variables": {
@@ -126,34 +290,34 @@
         {
             "apiVersion": "2015-06-15",
             "type": "Microsoft.Network/virtualNetworks",
-            "name": "[parameters('HubSettings').name]",
+            "name": "[parameters('hubvnetname')]",
             "location": "[resourceGroup().location]",
             "tags": {
-                "displayName": "[parameters('HubSettings').name]"
+                "displayName": "[parameters('hubvnetname')]"
             },
             "properties": {
                 "addressSpace": {
                     "addressPrefixes": [
-                        "[parameters('HubSettings').AddressPrefix]"
+                        "[parameters('hubvnetaddressprefix')]"
                     ]
                 },
                 "subnets": [
                     {
-                        "name": "[parameters('HubSettings').subnets[0].name]",
+                        "name": "[parameters('hubvnetnvasubnetname')]",
                         "properties": {
-                            "addressPrefix": "[parameters('HubSettings').subnets[0].addressPrefix]"
+                            "addressPrefix": "[parameters('hubvnetnvasubnet')]"
                         }
                     },
                     {
-                        "name": "[parameters('HubSettings').subnets[1].name]",
+                        "name": "[parameters('hubvnetvmsubnetname')]",
                         "properties": {
-                            "addressPrefix": "[parameters('HubSettings').subnets[1].addressPrefix]"
+                            "addressPrefix": "[parameters('hubvnetvmsubnet')]"
                         }
                     },
                     {
-                        "name": "[parameters('HubSettings').subnets[2].name]",
+                        "name": "AzureBastionSubnet",
                         "properties": {
-                            "addressPrefix": "[parameters('HubSettings').subnets[2].addressPrefix]"
+                            "addressPrefix": "[parameters('hubvnetbastionsubnet')]"
                         }
                     }
                 ]
@@ -165,8 +329,8 @@
                     "name": "HubToSpoke1",
                     "location": "[resourceGroup().location]",
                     "dependsOn": [
-                        "[concat('Microsoft.Network/virtualNetworks/', parameters('hubsettings').name)]",
-                        "[concat('Microsoft.Network/virtualNetworks/', parameters('Spoke1Settings').name)]"
+                        "[concat('Microsoft.Network/virtualNetworks/', parameters('hubvnetname'))]",
+                        "[concat('Microsoft.Network/virtualNetworks/', parameters('spoke1vnetname'))]"
                     ],
                     "comments": "This is the peering from Hub to Spoke 1",
                     "properties": {
@@ -175,7 +339,7 @@
                         "allowGatewayTransit": "true",
                         "useRemoteGateways": "false",
                         "remoteVirtualNetwork": {
-                            "id": "[resourceId('Microsoft.Network/virtualNetworks',parameters('Spoke1Settings').name)]"
+                            "id": "[resourceId('Microsoft.Network/virtualNetworks',parameters('spoke1vnetname'))]"
                         }
                     }
                 },
@@ -185,8 +349,8 @@
                     "name": "HubToSpoke2",
                     "location": "[resourceGroup().location]",
                     "dependsOn": [
-                        "[concat('Microsoft.Network/virtualNetworks/', parameters('HubSettings').name)]",
-                        "[concat('Microsoft.Network/virtualNetworks/', parameters('Spoke2Settings').name)]"
+                        "[concat('Microsoft.Network/virtualNetworks/', parameters('hubvnetname'))]",
+                        "[concat('Microsoft.Network/virtualNetworks/', parameters('spoke2vnetname'))]"
                     ],
                     "comments": "This is the peering from Hub to Spoke 2",
                     "properties": {
@@ -195,7 +359,7 @@
                         "allowGatewayTransit": "true",
                         "useRemoteGateways": "false",
                         "remoteVirtualNetwork": {
-                            "id": "[resourceId('Microsoft.Network/virtualNetworks',parameters('Spoke2Settings').name)]"
+                            "id": "[resourceId('Microsoft.Network/virtualNetworks',parameters('spoke2vnetname'))]"
                         }
                     }
                 }
@@ -204,7 +368,7 @@
         {
             "apiVersion": "2019-02-01",
             "type": "Microsoft.Network/publicIpAddresses",
-            "name": "[parameters('HubSettings').bastionpip]",
+            "name": "[parameters('hubbastionpip')]",
             "location": "[resourceGroup().location]",
             "sku": {
                 "name": "Standard"
@@ -218,11 +382,11 @@
         {
             "apiVersion": "2019-09-01",
             "type": "Microsoft.Network/bastionHosts",
-            "name": "[parameters('HubSettings').bastionhostname]",
+            "name": "[parameters('hubbastionhostname')]",
             "location": "[resourceGroup().location]",
             "dependsOn": [
-                "[concat('Microsoft.Network/publicIPAddresses/', parameters('Hubsettings').bastionpip)]",
-                "[concat('Microsoft.Network/virtualNetworks/', parameters('HubSettings').name)]"
+                "[concat('Microsoft.Network/publicIPAddresses/', parameters('hubbastionpip'))]",
+                "[concat('Microsoft.Network/virtualNetworks/', parameters('hubvnetname'))]"
             ],
             "properties": {
                 "ipConfigurations": [
@@ -231,10 +395,10 @@
                         "properties": {
                             "privateIPAllocationMethod": "Dynamic",
                             "publicIPAddress": {
-                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('Hubsettings').bastionpip)]"
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('hubbastionpip'))]"
                             },
                             "subnet": {
-                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('HubSettings').name), '/subnets/', parameters('HubSettings').subnets[2].name)]"
+                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('hubvnetname')), '/subnets/', 'AzureBastionSubnet')]"
                             }
                         }
                     }
@@ -246,35 +410,35 @@
         {
             "apiVersion": "2015-06-15",
             "type": "Microsoft.Network/virtualNetworks",
-            "name": "[parameters('Spoke1Settings').name]",
+            "name": "[parameters('spoke1vnetname')]",
             "location": "[resourceGroup().location]",
             "dependsOn": [
                 "[concat('Microsoft.Network/routeTables/', variables('routeTableName'))]"
             ],
 
             "tags": {
-                "displayName": "[parameters('Spoke1Settings').name]"
+                "displayName": "[parameters('spoke1vnetname')]"
             },
             "properties": {
                 "addressSpace": {
                     "addressPrefixes": [
-                        "[parameters('Spoke1Settings').AddressPrefix]"
+                        "[parameters('spoke1vnetaddressprefix')]"
                     ]
                 },
                 "subnets": [
                     {
-                        "name": "[parameters('Spoke1Settings').subnets[0].name]",
+                        "name": "[parameters('spoke1vnetvmsubnetname')]",
                         "properties": {
-                            "addressPrefix": "[parameters('Spoke1Settings').subnets[0].addressPrefix]",
+                            "addressPrefix": "[parameters('spoke1vnetvmsubnet')]",
                             "routeTable": {
                                 "id": "[resourceId('Microsoft.Network/routeTables', variables('routeTableName'))]"
                             }
                         }
                     },
                     {
-                        "name": "[parameters('Spoke1Settings').subnets[1].name]",
+                        "name": "AzureBastionSubnet",
                         "properties": {
-                            "addressPrefix": "[parameters('Spoke1Settings').subnets[1].addressPrefix]"
+                            "addressPrefix": "[parameters('spoke1vnetbastionsubnet')]"
                         }
                     }
                 ]
@@ -286,8 +450,8 @@
                     "name": "Spoke1ToHub",
                     "location": "[resourceGroup().location]",
                     "dependsOn": [
-                        "[concat('Microsoft.Network/virtualNetworks/', parameters('HubSettings').name)]",
-                        "[concat('Microsoft.Network/virtualNetworks/', parameters('Spoke1Settings').name)]"
+                        "[concat('Microsoft.Network/virtualNetworks/', parameters('hubvnetname'))]",
+                        "[concat('Microsoft.Network/virtualNetworks/', parameters('spoke1vnetname'))]"
                     ],
                     "comments": "This is the peering from Spoke 1 to Hub",
                     "properties": {
@@ -296,7 +460,7 @@
                         "allowGatewayTransit": "false",
                         "useRemoteGateways": "false",
                         "remoteVirtualNetwork": {
-                            "id": "[resourceId('Microsoft.Network/virtualNetworks',parameters('HubSettings').name)]"
+                            "id": "[resourceId('Microsoft.Network/virtualNetworks',parameters('hubvnetname'))]"
                         }
                     }
                 }
@@ -305,7 +469,7 @@
         {
             "apiVersion": "2019-02-01",
             "type": "Microsoft.Network/publicIpAddresses",
-            "name": "[parameters('Spoke1Settings').bastionpip]",
+            "name": "[parameters('spoke1bastionpip')]",
             "location": "[resourceGroup().location]",
             "sku": {
                 "name": "Standard"
@@ -319,11 +483,11 @@
         {
             "apiVersion": "2019-09-01",
             "type": "Microsoft.Network/bastionHosts",
-            "name": "[parameters('Spoke1Settings').bastionhostname]",
+            "name": "[parameters('spoke1bastionhostname')]",
             "location": "[resourceGroup().location]",
             "dependsOn": [
-                "[concat('Microsoft.Network/publicIPAddresses/', parameters('Spoke1Settings').bastionpip)]",
-                "[concat('Microsoft.Network/virtualNetworks/', parameters('Spoke1Settings').name)]"
+                "[concat('Microsoft.Network/publicIPAddresses/', parameters('spoke1bastionpip'))]",
+                "[concat('Microsoft.Network/virtualNetworks/', parameters('spoke1vnetname'))]"
             ],
             "properties": {
                 "ipConfigurations": [
@@ -332,10 +496,10 @@
                         "properties": {
                             "privateIPAllocationMethod": "Dynamic",
                             "publicIPAddress": {
-                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('Spoke1Settings').bastionpip)]"
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('spoke1bastionpip'))]"
                             },
                             "subnet": {
-                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('Spoke1Settings').name), '/subnets/', parameters('Spoke1Settings').subnets[1].name)]"
+                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('spoke1vnetname')), '/subnets/', 'AzureBastionSubnet')]"
                             }
                         }
                     }
@@ -347,34 +511,34 @@
         {
             "apiVersion": "2015-06-15",
             "type": "Microsoft.Network/virtualNetworks",
-            "name": "[parameters('Spoke2Settings').name]",
+            "name": "[parameters('spoke2vnetname')]",
             "location": "[resourceGroup().location]",
             "dependsOn": [
                 "[concat('Microsoft.Network/routeTables/', variables('routeTableName'))]"
             ],
             "tags": {
-                "displayName": "[parameters('Spoke2Settings').name]"
+                "displayName": "[parameters('spoke2vnetname')]"
             },
             "properties": {
                 "addressSpace": {
                     "addressPrefixes": [
-                        "[parameters('Spoke2Settings').AddressPrefix]"
+                        "[parameters('spoke2vnetaddressprefix')]"
                     ]
                 },
                 "subnets": [
                     {
-                        "name": "[parameters('Spoke2Settings').subnets[0].name]",
+                        "name": "[parameters('spoke2vnetvmsubnetname')]",
                         "properties": {
-                            "addressPrefix": "[parameters('Spoke2Settings').subnets[0].addressPrefix]",
+                            "addressPrefix": "[parameters('spoke2vnetvmsubnet')]",
                             "routeTable": {
                                 "id": "[resourceId('Microsoft.Network/routeTables', variables('routeTableName'))]"
                             }
                         }
                     },
                     {
-                        "name": "[parameters('Spoke2Settings').subnets[1].name]",
+                        "name": "AzureBastionSubnet",
                         "properties": {
-                            "addressPrefix": "[parameters('Spoke2Settings').subnets[1].addressPrefix]"
+                            "addressPrefix": "[parameters('spoke2vnetbastionsubnet')]"
                         }
                     }
                 ]
@@ -386,8 +550,8 @@
                     "name": "Spoke2ToHub",
                     "location": "[resourceGroup().location]",
                     "dependsOn": [
-                        "[concat('Microsoft.Network/virtualNetworks/', parameters('HubSettings').name)]",
-                        "[concat('Microsoft.Network/virtualNetworks/', parameters('Spoke2Settings').name)]"
+                        "[concat('Microsoft.Network/virtualNetworks/', parameters('hubvnetname'))]",
+                        "[concat('Microsoft.Network/virtualNetworks/', parameters('spoke2vnetname'))]"
                     ],
                     "comments": "This is the peering from Spoke 2 to Hub",
                     "properties": {
@@ -396,7 +560,7 @@
                         "allowGatewayTransit": "false",
                         "useRemoteGateways": "false",
                         "remoteVirtualNetwork": {
-                            "id": "[resourceId('Microsoft.Network/virtualNetworks',parameters('HubSettings').name)]"
+                            "id": "[resourceId('Microsoft.Network/virtualNetworks',parameters('hubvnetname'))]"
                         }
                     }
                 }
@@ -405,7 +569,7 @@
         {
             "apiVersion": "2019-02-01",
             "type": "Microsoft.Network/publicIpAddresses",
-            "name": "[parameters('Spoke2Settings').bastionpip]",
+            "name": "[parameters('spoke2bastionpip')]",
             "location": "[resourceGroup().location]",
             "sku": {
                 "name": "Standard"
@@ -419,11 +583,11 @@
         {
             "apiVersion": "2019-09-01",
             "type": "Microsoft.Network/bastionHosts",
-            "name": "[parameters('Spoke2Settings').bastionhostname]",
+            "name": "[parameters('spoke2bastionhostname')]",
             "location": "[resourceGroup().location]",
             "dependsOn": [
-                "[concat('Microsoft.Network/publicIPAddresses/', parameters('Spoke2Settings').bastionpip)]",
-                "[concat('Microsoft.Network/virtualNetworks/', parameters('Spoke2Settings').name)]"
+                "[concat('Microsoft.Network/publicIPAddresses/', parameters('spoke2bastionpip'))]",
+                "[concat('Microsoft.Network/virtualNetworks/', parameters('spoke2vnetname'))]"
             ],
             "properties": {
                 "ipConfigurations": [
@@ -432,10 +596,10 @@
                         "properties": {
                             "privateIPAllocationMethod": "Dynamic",
                             "publicIPAddress": {
-                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('Spoke2Settings').bastionpip)]"
+                                "id": "[resourceId('Microsoft.Network/publicIPAddresses', parameters('spoke2bastionpip'))]"
                             },
                             "subnet": {
-                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('Spoke2Settings').name), '/subnets/', parameters('Spoke2Settings').subnets[1].name)]"
+                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('spoke2vnetname')), '/subnets/', 'AzureBastionSubnet')]"
                             }
                         }
                     }
@@ -446,11 +610,11 @@
         },
         {
             "type": "Microsoft.Storage/storageAccounts",
-            "name": "[parameters('vm1').storageaccount]",
+            "name": "[parameters('vm1storageacct')]",
             "apiVersion": "2015-06-15",
             "location": "[resourceGroup().location]",
             "tags": {
-                "displayName": "[parameters('vm1').storageaccount]"
+                "displayName": "[parameters('vm1storageacct')]"
             },
             "properties": {
                 "accountType": "Standard_LRS"
@@ -459,13 +623,13 @@
         {
             "apiVersion": "2015-06-15",
             "type": "Microsoft.Network/networkInterfaces",
-            "name": "[parameters('vm1').nic]",
+            "name": "[parameters('vm1nic')]",
             "location": "[resourceGroup().location]",
             "dependsOn": [
-                "[concat('Microsoft.Network/virtualNetworks/', parameters('Spoke1Settings').name)]"
+                "[concat('Microsoft.Network/virtualNetworks/', parameters('spoke1vnetname'))]"
             ],
             "tags": {
-                "displayName": "[parameters('vm1').nic]"
+                "displayName": "[parameters('vm1nic')]"
             },
             "properties": {
                 "ipConfigurations": [
@@ -474,7 +638,7 @@
                         "properties": {
                             "privateIPAllocationMethod": "Dynamic",
                             "subnet": {
-                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('Spoke1Settings').name), '/subnets/', parameters('Spoke1Settings').subnets[0].name)]"
+                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('spoke1vnetname')), '/subnets/', parameters('spoke1vnetvmsubnetname'))]"
                             }
                         }
                     }
@@ -484,23 +648,23 @@
         {
             "apiVersion": "2017-03-30",
             "type": "Microsoft.Compute/virtualMachines",
-            "name": "[parameters('vm1').computerName]",
+            "name": "[parameters('vm1name')]",
             "location": "[resourceGroup().location]",
             "dependsOn": [
-                "[concat('Microsoft.Storage/storageAccounts/', parameters('vm1').storageaccount)]",
-                "[concat('Microsoft.Network/networkInterfaces/', parameters('vm1').nic)]"
+                "[concat('Microsoft.Storage/storageAccounts/', parameters('vm1storageacct'))]",
+                "[concat('Microsoft.Network/networkInterfaces/', parameters('vm1nic'))]"
             ],
             "tags": {
-                "displayName": "[parameters('vm1').computername]"
+                "displayName": "[parameters('vm1name')]"
             },
             "properties": {
                 "hardwareProfile": {
                     "vmSize": "Standard_D1"
                 },
                 "osProfile": {
-                    "computerName": "[parameters('vm1').computername]",
-                    "adminUsername": "[parameters('administratoraccount').administrator]",
-                    "adminPassword": "[parameters('administratoraccount').password]"
+                    "computerName": "[parameters('vm1name')]",
+                    "adminUsername": "[parameters('adminuser')]",
+                    "adminPassword": "[parameters('adminpassword')]"
                 },
                 "storageProfile": {
                     "imageReference": {
@@ -510,7 +674,7 @@
                         "version": "latest"
                     },
                     "osDisk": {
-                        "name": "[parameters('vm1').disk]",
+                        "name": "[parameters('vm1disk')]",
                         "caching": "ReadWrite",
                         "createOption": "FromImage"
                     }
@@ -518,7 +682,7 @@
                 "networkProfile": {
                     "networkInterfaces": [
                         {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('vm1').nic)]"
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('vm1nic'))]"
                         }
                     ]
                 }
@@ -526,11 +690,11 @@
         },
         {
             "type": "Microsoft.Storage/storageAccounts",
-            "name": "[parameters('vm2').storageaccount]",
+            "name": "[parameters('vm2storageacct')]",
             "apiVersion": "2015-06-15",
             "location": "[resourceGroup().location]",
             "tags": {
-                "displayName": "[parameters('vm2').storageaccount]"
+                "displayName": "[parameters('vm2storageacct')]"
             },
             "properties": {
                 "accountType": "Standard_LRS"
@@ -539,13 +703,13 @@
         {
             "apiVersion": "2015-06-15",
             "type": "Microsoft.Network/networkInterfaces",
-            "name": "[parameters('vm2').nic]",
+            "name": "[parameters('vm2nic')]",
             "location": "[resourceGroup().location]",
             "dependsOn": [
-                "[concat('Microsoft.Network/virtualNetworks/', parameters('Spoke2Settings').name)]"
+                "[concat('Microsoft.Network/virtualNetworks/', parameters('spoke2vnetname'))]"
             ],
             "tags": {
-                "displayName": "[parameters('vm2').nic]"
+                "displayName": "[parameters('vm2nic')]"
             },
             "properties": {
                 "ipConfigurations": [
@@ -554,7 +718,7 @@
                         "properties": {
                             "privateIPAllocationMethod": "Dynamic",
                             "subnet": {
-                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('Spoke2Settings').name), '/subnets/', parameters('Spoke1Settings').subnets[0].name)]"
+                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('spoke2vnetname')), '/subnets/', parameters('spoke2vnetvmsubnetname'))]"
                             }
                         }
                     }
@@ -564,23 +728,23 @@
         {
             "apiVersion": "2017-03-30",
             "type": "Microsoft.Compute/virtualMachines",
-            "name": "[parameters('vm2').computerName]",
+            "name": "[parameters('vm2name')]",
             "location": "[resourceGroup().location]",
             "dependsOn": [
-                "[concat('Microsoft.Storage/storageAccounts/', parameters('vm2').storageaccount)]",
-                "[concat('Microsoft.Network/networkInterfaces/', parameters('vm2').nic)]"
+                "[concat('Microsoft.Storage/storageAccounts/', parameters('vm2storageacct'))]",
+                "[concat('Microsoft.Network/networkInterfaces/', parameters('vm2nic'))]"
             ],
             "tags": {
-                "displayName": "[parameters('vm2').computername]"
+                "displayName": "[parameters('vm2name')]"
             },
             "properties": {
                 "hardwareProfile": {
                     "vmSize": "Standard_D1"
                 },
                 "osProfile": {
-                    "computerName": "[parameters('vm2').computername]",
-                    "adminUsername": "[parameters('administratoraccount').administrator]",
-                    "adminPassword": "[parameters('administratoraccount').password]"
+                    "computerName": "[parameters('vm2name')]",
+                    "adminUsername": "[parameters('adminuser')]",
+                    "adminPassword": "[parameters('adminpassword')]"
                 },
                 "storageProfile": {
                     "imageReference": {
@@ -590,7 +754,7 @@
                         "version": "latest"
                     },
                     "osDisk": {
-                        "name": "[parameters('vm2').disk]",
+                        "name": "[parameters('vm2disk')]",
                         "caching": "ReadWrite",
                         "createOption": "FromImage"
                     }
@@ -598,7 +762,7 @@
                 "networkProfile": {
                     "networkInterfaces": [
                         {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('vm2').nic)]"
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('vm2nic'))]"
                         }
                     ]
                 }
@@ -606,11 +770,11 @@
         },
         {
             "type": "Microsoft.Storage/storageAccounts",
-            "name": "[parameters('vm3').storageaccount]",
+            "name": "[parameters('vm3storageacct')]",
             "apiVersion": "2015-06-15",
             "location": "[resourceGroup().location]",
             "tags": {
-                "displayName": "[parameters('vm3').storageaccount]"
+                "displayName": "[parameters('vm3storageacct')]"
             },
             "properties": {
                 "accountType": "Standard_LRS"
@@ -619,13 +783,13 @@
         {
             "apiVersion": "2015-06-15",
             "type": "Microsoft.Network/networkInterfaces",
-            "name": "[parameters('vm3').nic]",
+            "name": "[parameters('vm3nic')]",
             "location": "[resourceGroup().location]",
             "dependsOn": [
-                "[concat('Microsoft.Network/virtualNetworks/', parameters('HubSettings').name)]"
+                "[concat('Microsoft.Network/virtualNetworks/', parameters('hubvnetname'))]"
             ],
             "tags": {
-                "displayName": "[parameters('vm3').nic]"
+                "displayName": "[parameters('vm3nic')]"
             },
             "properties": {
                 "ipConfigurations": [
@@ -635,7 +799,7 @@
                             "privateIPAllocationMethod": "Static",
                             "privateIPAddress": "10.0.0.4",
                             "subnet": {
-                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('HubSettings').name), '/subnets/', parameters('HubSettings').subnets[0].name)]"
+                                "id": "[concat(resourceId('Microsoft.Network/virtualNetworks', parameters('hubvnetname')), '/subnets/', parameters('hubvnetnvasubnetname'))]"
                             }
                         }
                     }
@@ -647,23 +811,23 @@
         {
             "apiVersion": "2017-03-30",
             "type": "Microsoft.Compute/virtualMachines",
-            "name": "[parameters('vm3').computerName]",
+            "name": "[parameters('vm3name')]",
             "location": "[resourceGroup().location]",
             "dependsOn": [
-                "[concat('Microsoft.Storage/storageAccounts/', parameters('vm3').storageaccount)]",
-                "[concat('Microsoft.Network/networkInterfaces/', parameters('vm3').nic)]"
+                "[concat('Microsoft.Storage/storageAccounts/', parameters('vm3storageacct'))]",
+                "[concat('Microsoft.Network/networkInterfaces/', parameters('vm3nic'))]"
             ],
             "tags": {
-                "displayName": "[parameters('vm3').computername]"
+                "displayName": "[parameters('vm3name')]"
             },
             "properties": {
                 "hardwareProfile": {
                     "vmSize": "Standard_D1"
                 },
                 "osProfile": {
-                    "computerName": "[parameters('vm3').computername]",
-                    "adminUsername": "[parameters('administratoraccount').administrator]",
-                    "adminPassword": "[parameters('administratoraccount').password]"
+                    "computerName": "[parameters('vm3name')]",
+                    "adminUsername": "[parameters('adminuser')]",
+                    "adminPassword": "[parameters('adminpassword')]"
                 },
                 "storageProfile": {
                     "imageReference": {
@@ -673,7 +837,7 @@
                         "version": "latest"
                     },
                     "osDisk": {
-                        "name": "[parameters('vm3').disk]",
+                        "name": "[parameters('vm3disk')]",
                         "caching": "ReadWrite",
                         "createOption": "FromImage"
                     }
@@ -681,7 +845,7 @@
                 "networkProfile": {
                     "networkInterfaces": [
                         {
-                            "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('vm3').nic)]"
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('vm3nic'))]"
                         }
                     ]
                 }
@@ -694,7 +858,7 @@
                     "name": "config-nva",
                     "location": "[resourceGroup().location]",
                     "dependsOn": [
-                        "[concat('Microsoft.Compute/virtualMachines/', parameters('vm3').computerName)]"
+                        "[concat('Microsoft.Compute/virtualMachines/', parameters('vm3name'))]"
                     ],
                     "tags": {
                         "displayName": "config-nva"
@@ -718,23 +882,23 @@
     "outputs": {
         "VM 1 Name": {
             "type": "string",
-            "value": "[parameters('vm1').computername]"
+            "value": "[parameters('vm1name')]"
         },
         "VM 2 Name": {
             "type": "string",
-            "value": "[parameters('vm2').computername]"
+            "value": "[parameters('vm2name')]"
         },
         "VM 3 Name": {
             "type": "string",
-            "value": "[parameters('vm3').computername]"
+            "value": "[parameters('vm3name')]"
         },
         "Administrator Account": {
             "type": "string",
-            "value": "[parameters('administratoraccount').administrator]"
+            "value": "[parameters('adminuser')]"
         },
         "Administrator Password": {
             "type": "string",
-            "value": "[parameters('administratoraccount').password]"
+            "value": "[parameters('adminpassword')]"
         }
     },
     "functions": [
